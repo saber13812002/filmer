@@ -4,7 +4,7 @@ overview: Design a modular, extensible architecture for the AI-assisted movie cr
 todos:
   - id: create_folder_structure
     content: Create the new folder structure (src/, projects/, api/, config/, etc.) and migrate existing files to legacy/
-    status: pending
+    status: in_progress
   - id: implement_contracts
     content: Implement shared contracts (timeline_schema.py, project_config.py, stage_outputs.py) with JSON schema validation
     status: pending
@@ -76,6 +76,8 @@ flowchart TD
     TimelineGen -.->|uses| TimelineSchema
     Render -.->|uses| TimelineSchema
 ```
+
+
 
 ## Proposed Folder Structure
 
@@ -179,6 +181,8 @@ filmer/
 └── README.md
 ```
 
+
+
 ## Folder Explanations
 
 ### `legacy/`
@@ -199,10 +203,10 @@ Pure domain logic with no external dependencies. Contains business rules:
 Pipeline stages that orchestrate core logic and adapters. All stages implement `BaseStage` interface:
 
 - **base.py**: Defines `BaseStage` abstract class with methods:
-  - `run(project_id, config)`: Execute stage logic
-  - `load_input(project_id)`: Load previous stage output or project files
-  - `save_output(project_id, data)`: Save stage output
-  - `validate(config)`: Validate stage configuration
+- `run(project_id, config)`: Execute stage logic
+- `load_input(project_id)`: Load previous stage output or project files
+- `save_output(project_id, data)`: Save stage output
+- `validate(config)`: Validate stage configuration
 
 Each concrete stage:
 
@@ -226,14 +230,13 @@ Abstraction layer for external services:
 Shared data schemas and validation with separation of concerns:
 
 - **schemas/**: JSON Schema files for validation and documentation
-  - `timeline.schema.json`: Timeline JSON schema (v1.0 frozen)
-  - `project.schema.json`: Project configuration schema
-  - `stage_outputs.schema.json`: Inter-stage data formats
-
+- `timeline.schema.json`: Timeline JSON schema (v1.0 frozen)
+- `project.schema.json`: Project configuration schema
+- `stage_outputs.schema.json`: Inter-stage data formats
 - **models/**: Pydantic models for runtime validation and FastAPI integration
-  - `timeline.py`: Timeline Pydantic model (matches JSON schema)
-  - `project.py`: Project config Pydantic model
-  - `stage_outputs.py`: Inter-stage data Pydantic models
+- `timeline.py`: Timeline Pydantic model (matches JSON schema)
+- `project.py`: Project config Pydantic model
+- `stage_outputs.py`: Inter-stage data Pydantic models
 
 **Benefits**: JSON Schema for docs/validation, Pydantic for runtime type safety and FastAPI integration.
 
@@ -511,6 +514,8 @@ User sets options in `projects/{project_id}/config.json`:
 }
 ```
 
+
+
 ### Pipeline Execution
 
 - **CLI**: `python scripts/run_pipeline.py --project-id tt0133093`
@@ -627,7 +632,6 @@ Common configurations stored in `config/presets.yaml`:
 2. **Contract-First**: All stages communicate via well-defined schemas
 3. **Independence**: Each stage runnable standalone for testing/debugging
 4. **Extensibility**: New features added via plugins/filters, not core changes
-
 5. **Backward Compatibility**: Existing timeline.json format always supported
 6. **Interface-Based Design**: All stages implement BaseStage for unified CLI/API usage
 7. **Schema/Model Separation**: JSON Schema for validation/docs, Pydantic for runtime
@@ -705,4 +709,3 @@ Segments with `spoiler.risk > spoiler_risk_threshold` are filtered out when `spo
 
 - Gradual filtering (not binary)
 - Configurable sensitivity
-- Future ML-based spoiler detection
