@@ -77,8 +77,6 @@ flowchart TD
     Render -.->|uses| TimelineSchema
 ```
 
-
-
 ## Proposed Folder Structure
 
 ```javascript
@@ -97,10 +95,11 @@ filmer/
 │   │
 │   ├── stages/                     # Pipeline stages (orchestration)
 │   │   ├── __init__.py
+│   │   ├── base.py                 # BaseStage interface (run, load, save)
 │   │   ├── ingest.py               # Stage 1: File ingestion & validation
 │   │   ├── index.py                # Stage 2: Movie subtitle indexing
 │   │   ├── search.py               # Stage 3: Narration search
-│   │   ├── timeline_generate.py    # Stage 4: Timeline generation
+│   │   ├── timeline.py               # Stage 4: Timeline generation
 │   │   └── render.py               # Stage 5: Video rendering
 │   │
 │   ├── adapters/                   # External service adapters
@@ -111,9 +110,14 @@ filmer/
 │   │
 │   ├── contracts/                  # Shared schemas & data models
 │   │   ├── __init__.py
-│   │   ├── timeline_schema.py      # Timeline JSON schema & validation
-│   │   ├── project_config.py       # Project configuration schema
-│   │   └── stage_outputs.py           # Inter-stage data contracts
+│   │   ├── schemas/                # JSON Schema definitions
+│   │   │   ├── timeline.schema.json
+│   │   │   ├── project.schema.json
+│   │   │   └── stage_outputs.schema.json
+│   │   └── models/                 # Pydantic models (runtime validation)
+│   │       ├── timeline.py         # Timeline Pydantic model
+│   │       ├── project.py          # Project config Pydantic model
+│   │       └── stage_outputs.py    # Inter-stage data models
 │   │
 │   └── utils/                      # Shared utilities
 │       ├── __init__.py
@@ -134,15 +138,19 @@ filmer/
 │
 ├── projects/                       # Project workspaces
 │   └── {project_id}/               # e.g., tt0133093, critique_001
-│       ├── config.json             # Project configuration
-│       ├── data/                   # Project-specific data
+│       ├── data/                   # Project-specific input data
+│       │   ├── movie.mp4           # Optional: reference video
 │       │   ├── movie.srt
-│       │   ├── narration.srt
-│       │   └── movie.mp4           # Optional: reference video
+│       │   ├── narration.wav      # Narration audio file
+│       │   └── narration.srt
 │       ├── index/                  # ChromaDB data (if local)
-│       └── outputs/                # Generated files
-│           ├── timeline.json
-│           └── final.mp4
+│       │   └── chroma/
+│       ├── configs/                # Project configuration
+│       │   └── project.json
+│       ├── outputs/                # Generated files
+│       │   ├── timeline.json
+│       │   └── final.mp4
+│       └── logs/                   # Stage execution logs
 │
 ├── shared/                         # Shared resources
 │   ├── films/                      # Legacy structure (migrated)
@@ -171,8 +179,6 @@ filmer/
 └── README.md
 ```
 
-
-
 ## Folder Explanations
 
 ### `legacy/`
@@ -190,13 +196,22 @@ Pure domain logic with no external dependencies. Contains business rules:
 
 ### `src/stages/`
 
-Pipeline stages that orchestrate core logic and adapters. Each stage:
+Pipeline stages that orchestrate core logic and adapters. All stages implement `BaseStage` interface:
 
+- **base.py**: Defines `BaseStage` abstract class with methods:
+  - `run(project_id, config)`: Execute stage logic
+  - `load_input(project_id)`: Load previous stage output or project files
+  - `save_output(project_id, data)`: Save stage output
+  - `validate(config)`: Validate stage configuration
+
+Each concrete stage:
+
+- Implements `BaseStage` interface
 - Reads input from previous stage or project files
 - Executes domain logic via `core/`
 - Uses adapters for external services
 - Writes output to project workspace or next stage
-- Can be run independently via CLI
+- Can be run independently via CLI or API
 
 ### `src/adapters/`
 
@@ -208,20 +223,37 @@ Abstraction layer for external services:
 
 ### `src/contracts/`
 
-Shared data schemas and validation:
+Shared data schemas and validation with separation of concerns:
 
-- **timeline_schema.py**: Canonical timeline JSON schema with extensions
-- **project_config.py**: Project metadata, options, presets
-- **stage_outputs.py**: Inter-stage data formats
+- **schemas/**: JSON Schema files for validation and documentation
+  - `timeline.schema.json`: Timeline JSON schema (v1.0 frozen)
+  - `project.schema.json`: Project configuration schema
+  - `stage_outputs.schema.json`: Inter-stage data formats
+
+- **models/**: Pydantic models for runtime validation and FastAPI integration
+  - `timeline.py`: Timeline Pydantic model (matches JSON schema)
+  - `project.py`: Project config Pydantic model
+  - `stage_outputs.py`: Inter-stage data Pydantic models
+
+**Benefits**: JSON Schema for docs/validation, Pydantic for runtime type safety and FastAPI integration.
 
 ### `projects/{project_id}/`
 
-Self-contained project workspaces. Each project:
+Self-contained project workspaces following standardized structure:
+
+- **data/**: Input files (movie SRT, narration SRT/audio, optional video)
+- **index/**: ChromaDB index data (if using local storage)
+- **configs/**: Project configuration JSON
+- **outputs/**: Generated timeline.json and final video
+- **logs/**: Stage execution logs
+
+Each project:
 
 - Has unique identifier (IMDb ID or custom)
-- Contains input files, config, and outputs
-- Isolated from other projects
-- Can be archived/moved independently
+- Is completely isolated from other projects
+- Can be archived/moved as a single unit
+- Fully browsable in UI
+- Supports batch operations
 
 ### `api/`
 
@@ -285,9 +317,28 @@ The timeline schema extends the current format to support future features while 
             "type": "number",
             "description": "Scene weight for filtering (optional)"
           },
-          "spoiler_safe": {
-            "type": "boolean",
-            "description": "Whether segment is spoiler-safe (optional)"
+          "spoiler": {
+            "type": "object",
+            "description": "Spoiler risk assessment (optional)",
+            "properties": {
+              "risk": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 1,
+                "description": "Spoiler risk score (0=safe, 1=severe spoiler)"
+              },
+              "reason": {
+                "type": "string",
+                "enum": ["plot_twist", "ending", "character_death", "none"],
+                "description": "Reason for spoiler risk"
+              },
+              "confidence": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 1,
+                "description": "Confidence in spoiler detection"
+              }
+            }
           },
           "transitions": {
             "type": "object",
@@ -346,6 +397,31 @@ The timeline schema extends the current format to support future features while 
         }
       }
     },
+    "global_overlays": {
+      "type": "array",
+      "description": "Global overlays applied to entire video (optional)",
+      "items": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": ["logo", "text", "watermark"]
+          },
+          "position": {
+            "type": "string",
+            "enum": ["top-left", "top-right", "bottom-left", "bottom-right", "center"]
+          },
+          "file": {"type": "string"},
+          "opacity": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1
+          },
+          "start_time": {"type": "number"},
+          "end_time": {"type": "number"}
+        }
+      }
+    },
     "metadata": {
       "type": "object",
       "properties": {
@@ -357,6 +433,12 @@ The timeline schema extends the current format to support future features while 
           "type": "object",
           "properties": {
             "spoiler_safe_mode": {"type": "boolean"},
+            "spoiler_risk_threshold": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1,
+              "description": "Maximum allowed spoiler risk (0-1)"
+            },
             "max_duration": {"type": "number"},
             "min_segment_length": {"type": "number"},
             "similarity_threshold": {"type": "number"}
@@ -428,8 +510,6 @@ User sets options in `projects/{project_id}/config.json`:
   }
 }
 ```
-
-
 
 ### Pipeline Execution
 
@@ -504,8 +584,10 @@ Common configurations stored in `config/presets.yaml`:
 
 - Create folder structure
 - Move existing code to `legacy/`
-- Implement `contracts/timeline_schema.py`
-- Create basic stage interfaces
+- Implement `BaseStage` interface in `src/stages/base.py`
+- Create JSON Schema files in `contracts/schemas/`
+- Implement Pydantic models in `contracts/models/`
+- Freeze timeline schema v1.0
 
 ### Phase 2: Core Pipeline
 
@@ -545,3 +627,82 @@ Common configurations stored in `config/presets.yaml`:
 2. **Contract-First**: All stages communicate via well-defined schemas
 3. **Independence**: Each stage runnable standalone for testing/debugging
 4. **Extensibility**: New features added via plugins/filters, not core changes
+
+5. **Backward Compatibility**: Existing timeline.json format always supported
+6. **Interface-Based Design**: All stages implement BaseStage for unified CLI/API usage
+7. **Schema/Model Separation**: JSON Schema for validation/docs, Pydantic for runtime
+
+## Recommended Next Steps
+
+### Immediate Priority: Stage Interface + Timeline Contract Freeze
+
+**Goal**: Prove the architecture with a minimal end-to-end implementation.
+
+#### Step 1: Implement BaseStage Interface
+
+- Create `src/stages/base.py` with abstract `BaseStage` class
+- Define methods: `run()`, `load_input()`, `save_output()`, `validate()`
+- All future stages will inherit from this interface
+
+#### Step 2: Freeze Timeline Schema v1.0
+
+- Create `src/contracts/schemas/timeline.schema.json` (frozen version)
+- Create `src/contracts/models/timeline.py` (Pydantic model)
+- Ensure backward compatibility with existing `timeline.json` format
+- Document all optional fields and extensions
+
+#### Step 3: Implement Timeline Generation Stage
+
+- Create `src/stages/timeline.py` inheriting from `BaseStage`
+- Use mock/simple matching logic initially
+- Output: `projects/{project_id}/outputs/timeline.json`
+- Verify output works with legacy `cut_video.py`
+
+#### Step 4: End-to-End Proof
+
+- Run timeline stage → generate timeline.json
+- Feed to legacy cutter → produce video
+- Validate the contract works correctly
+
+**Why This Approach**:
+
+- Proves the architecture works
+- Establishes the contract as the integration point
+- Makes UI and automation trivial to add later
+- Minimal code, maximum validation
+
+### Future Stages (After Proof)
+
+1. Ingest stage (file validation)
+2. Index stage (ChromaDB population)
+3. Search stage (semantic matching)
+4. Render stage (new FFmpeg adapter)
+
+## Spoiler Risk System
+
+The spoiler system uses a risk-based approach instead of simple boolean:
+
+### Risk Levels
+
+- **0.0-0.3**: Safe (no spoilers)
+- **0.3-0.6**: Risky (minor spoilers)
+- **0.6-1.0**: Forbidden (major spoilers)
+
+### Configuration
+
+```json
+{
+  "options": {
+    "spoiler_safe_mode": true,
+    "spoiler_risk_threshold": 0.3
+  }
+}
+```
+
+Segments with `spoiler.risk > spoiler_risk_threshold` are filtered out when `spoiler_safe_mode` is enabled.
+
+### Benefits
+
+- Gradual filtering (not binary)
+- Configurable sensitivity
+- Future ML-based spoiler detection
