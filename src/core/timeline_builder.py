@@ -67,15 +67,33 @@ def build_timeline(
     return timeline
 
 
-def save_timeline_json(timeline: Timeline, output_path: Path) -> None:
+def save_timeline_json(timeline: Timeline, output_path: Path, minimal: bool = False) -> None:
     """Save timeline to JSON file
     
     Args:
         timeline: Timeline object
         output_path: Path to save JSON file
+        minimal: If True, only include essential fields (backward compatible)
     """
     output_path.parent.mkdir(parents=True, exist_ok=True)
     
-    with open(output_path, 'w', encoding='utf-8') as f:
-        f.write(timeline.model_dump_json(indent=2))
+    if minimal:
+        # Create minimal version for legacy compatibility
+        minimal_data = {
+            "input": timeline.input,
+            "narration": timeline.narration,
+            "output": timeline.output,
+            "segments": [
+                {
+                    "start": seg.start,
+                    "end": seg.end
+                }
+                for seg in timeline.segments
+            ]
+        }
+        with open(output_path, 'w', encoding='utf-8') as f:
+            json.dump(minimal_data, f, indent=2)
+    else:
+        with open(output_path, 'w', encoding='utf-8') as f:
+            f.write(timeline.model_dump_json(indent=2, exclude_none=True))
 

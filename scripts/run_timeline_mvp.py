@@ -45,7 +45,7 @@ def main():
         
         timeline_path = stage.get_outputs_path(args.project_id) / "timeline.json"
         
-        print(f"\n✓ Timeline generated successfully!")
+        print(f"\n[OK] Timeline generated successfully!")
         print(f"  Location: {timeline_path}")
         print(f"  Segments: {len(result['segments'])}")
         print(f"\nTo use with legacy cutter, copy timeline.json to project root:")

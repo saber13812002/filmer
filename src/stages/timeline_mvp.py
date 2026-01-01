@@ -106,9 +106,9 @@ class TimelineStageMVP(BaseStage):
             root_timeline_path = Path("timeline.json")
         
         save_timeline_json(timeline, root_timeline_path)
-        print(f"✓ Timeline also saved to root: {root_timeline_path}")
+        print(f"[OK] Timeline also saved to root: {root_timeline_path}")
         
-        print(f"✓ Timeline generated: {timeline_path}")
+        print(f"[OK] Timeline generated: {timeline_path}")
         print(f"  Segments: {len(segments)}")
         print(f"  Output: {output_video}")
         
