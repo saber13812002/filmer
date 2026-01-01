@@ -74,14 +74,14 @@ def remove_severe_overlaps(matches: List[Match], overlap_threshold: float = 0.7)
         List of matches with severe overlaps removed
     """
     overlaps = detect_overlaps(matches, overlap_threshold)
-    to_remove = set()
+    to_remove_ids = set()
     
     for match1, match2 in overlaps:
         # Keep the match with higher similarity score
         if match1.similarity_score >= match2.similarity_score:
-            to_remove.add(match2)
+            to_remove_ids.add(match2.segment_id)
         else:
-            to_remove.add(match1)
+            to_remove_ids.add(match1.segment_id)
     
-    return [m for m in matches if m not in to_remove]
+    return [m for m in matches if m.segment_id not in to_remove_ids]
 

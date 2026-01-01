@@ -1,0 +1,26 @@
+{
+  "matches": [
+    {
+      "segment_id": "movie_000001",
+      "start_time": 0.5,
+      "end_time": 3.2,
+      "similarity_score": 0.85,
+      "narration_text": "This is a test narration segment"
+    },
+    {
+      "segment_id": "movie_000002",
+      "start_time": 15.0,
+      "end_time": 18.4,
+      "similarity_score": 0.82,
+      "narration_text": "Another test segment"
+    },
+    {
+      "segment_id": "movie_000003",
+      "start_time": 110.0,
+      "end_time": 113.75,
+      "similarity_score": 0.79,
+      "narration_text": "Third test segment"
+    }
+  ]
+}
+

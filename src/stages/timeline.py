@@ -37,11 +37,11 @@ class TimelineStage(BaseStage):
         from src.core.matching import Match
         matches = [
             Match(
-                segment_id=match["segment_id"],
-                start_time=match["start_time"],
-                end_time=match["end_time"],
-                similarity_score=match["similarity_score"],
-                narration_text=match.get("narration_text", "")
+                segment_id=match.segment_id if hasattr(match, 'segment_id') else match["segment_id"],
+                start_time=match.start_time if hasattr(match, 'start_time') else match["start_time"],
+                end_time=match.end_time if hasattr(match, 'end_time') else match["end_time"],
+                similarity_score=match.similarity_score if hasattr(match, 'similarity_score') else match["similarity_score"],
+                narration_text=getattr(match, 'narration_text', None) or match.get("narration_text", "") if isinstance(match, dict) else (match.narration_text if hasattr(match, 'narration_text') else "")
             )
             for match in search_output.matches
         ]
@@ -102,8 +102,12 @@ class TimelineStage(BaseStage):
         output_path = self.get_outputs_path(project_id) / "outputs" / "timeline.json"
         output_path.parent.mkdir(parents=True, exist_ok=True)
         
+        # Use Pydantic's JSON serialization which handles datetime
+        from src.contracts.models.timeline import Timeline
+        timeline = Timeline(**data)
+        
         with open(output_path, 'w', encoding='utf-8') as f:
-            json.dump(data, f, indent=2)
+            f.write(timeline.model_dump_json(indent=2, exclude_none=True))
         
         return output_path
     
