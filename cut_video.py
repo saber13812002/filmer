@@ -1,51 +1,46 @@
-from typing import Any
-
-
 import json
 import subprocess
+
+FFMPEG = r"C:\Program Files (x86)\FastPCTools\Fast Screen Recorder\ffmpeg.exe"
 
 def main():
     with open("timeline.json", "r", encoding="utf-8") as f:
         config = json.load(f)
 
     input_file = config["input"]
+    narration_file = config["narration"]
     output_file = config["output"]
     segments = config["segments"]
 
     filters_v = []
-    filters_a = []
     v_labels = []
-    a_labels = []
 
-    for i, seg in enumerate[Any](segments):
+    for i, seg in enumerate(segments):
         start = seg["start"]
         end = seg["end"]
 
         filters_v.append(
             f"[0:v]trim=start={start}:end={end},setpts=PTS-STARTPTS[v{i}]"
         )
-        filters_a.append(
-            f"[0:a]atrim=start={start}:end={end},asetpts=PTS-STARTPTS[a{i}]"
-        )
-
         v_labels.append(f"[v{i}]")
-        a_labels.append(f"[a{i}]")
 
-    filter_complex = ";".join(filters_v + filters_a) + ";"
-    filter_complex += "".join(v_labels) + f"concat=n={len(v_labels)}:v=1:a=0[outv];"
-    filter_complex += "".join(a_labels) + f"concat=n={len(a_labels)}:v=0:a=1[outa]"
+    filter_complex = ";".join(filters_v) + ";"
+    filter_complex += "".join(v_labels)
+    filter_complex += f"concat=n={len(v_labels)}:v=1:a=0[outv]"
 
     cmd = [
-        "C:\\Program Files (x86)\\FastPCTools\\Fast Screen Recorder\\ffmpeg.exe",
+        FFMPEG,
         "-y",
-        "-i", input_file,
+        "-i", input_file,        # input 0: video
+        "-i", narration_file,    # input 1: narration mp3
         "-filter_complex", filter_complex,
         "-map", "[outv]",
-        "-map", "[outa]",
+        "-map", "1:a:0",
         "-c:v", "libx264",
         "-preset", "veryfast",
         "-crf", "18",
         "-c:a", "aac",
+        "-shortest",              # اگر نریشن کوتاه‌تر بود
         "-movflags", "+faststart",
         output_file
     ]

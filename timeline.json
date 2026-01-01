@@ -1,5 +1,6 @@
 {
     "input": "films\\input\\3034981-0-FoxandHareSavetheForest-1080.mp4",
+    "narration": "films\\narration\\imdb123123.m4a",
     "output": "films\\output\\output_cut3.mp4",
     "segments": [
       { "start": 0.50, "end": 3.20 },
