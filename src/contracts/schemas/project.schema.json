@@ -1,0 +1,65 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Project Configuration Schema",
+  "description": "Project workspace configuration schema",
+  "type": "object",
+  "required": ["movie_id"],
+  "properties": {
+    "movie_id": {
+      "type": "string",
+      "description": "IMDb ID or custom project identifier"
+    },
+    "options": {
+      "type": "object",
+      "description": "Processing options",
+      "properties": {
+        "spoiler_safe_mode": {
+          "type": "boolean",
+          "default": false,
+          "description": "Enable spoiler filtering"
+        },
+        "spoiler_risk_threshold": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "default": 0.3,
+          "description": "Maximum allowed spoiler risk (0-1)"
+        },
+        "max_duration": {
+          "type": "number",
+          "description": "Maximum output video duration in seconds"
+        },
+        "min_segment_length": {
+          "type": "number",
+          "default": 3.0,
+          "description": "Minimum segment length in seconds"
+        },
+        "similarity_threshold": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "default": 0.75,
+          "description": "Minimum similarity score for segment selection"
+        },
+        "preset": {
+          "type": "string",
+          "enum": ["quick", "standard", "spoiler_safe", "high_quality"],
+          "default": "standard",
+          "description": "Processing preset"
+        }
+      }
+    },
+    "embedding": {
+      "type": "object",
+      "description": "Embedding model configuration",
+      "properties": {
+        "model": {
+          "type": "string",
+          "default": "sentence-transformers/all-MiniLM-L6-v2",
+          "description": "Embedding model name"
+        }
+      }
+    }
+  }
+}
+

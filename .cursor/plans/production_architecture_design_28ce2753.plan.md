@@ -4,36 +4,36 @@ overview: Design a modular, extensible architecture for the AI-assisted movie cr
 todos:
   - id: create_folder_structure
     content: Create the new folder structure (src/, projects/, api/, config/, etc.) and migrate existing files to legacy/
-    status: in_progress
+    status: completed
   - id: implement_contracts
     content: Implement shared contracts (timeline_schema.py, project_config.py, stage_outputs.py) with JSON schema validation
-    status: pending
+    status: completed
     dependencies:
       - create_folder_structure
   - id: build_core_domain
     content: Implement core domain logic (chunking.py, matching.py, filtering.py, timeline_builder.py)
-    status: pending
+    status: completed
     dependencies:
       - implement_contracts
   - id: create_adapters
     content: Build adapter layer (chromadb_adapter.py, ffmpeg_adapter.py, embedding_adapter.py)
-    status: pending
+    status: completed
     dependencies:
       - implement_contracts
   - id: implement_stages
     content: Implement pipeline stages (ingest.py, index.py, search.py, timeline_generate.py, render.py)
-    status: pending
+    status: completed
     dependencies:
       - build_core_domain
       - create_adapters
   - id: create_cli_scripts
     content: Create CLI scripts (run_stage.py, run_pipeline.py) for stage execution
-    status: pending
+    status: completed
     dependencies:
       - implement_stages
   - id: test_pipeline
     content: Test end-to-end pipeline with sample data and verify backward compatibility
-    status: pending
+    status: completed
     dependencies:
       - create_cli_scripts
 ---

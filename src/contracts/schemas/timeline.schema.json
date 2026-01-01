@@ -1,0 +1,189 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Timeline Schema v1.0",
+  "description": "Canonical timeline JSON schema for video segment configuration. Frozen v1.0 - maintains backward compatibility with existing timeline.json format.",
+  "type": "object",
+  "required": ["input", "narration", "output", "segments"],
+  "properties": {
+    "input": {
+      "type": "string",
+      "description": "Path to input video file"
+    },
+    "narration": {
+      "type": "string",
+      "description": "Path to narration audio file"
+    },
+    "output": {
+      "type": "string",
+      "description": "Path to output video file"
+    },
+    "segments": {
+      "type": "array",
+      "description": "Array of video segments to extract and concatenate",
+      "items": {
+        "type": "object",
+        "required": ["start", "end"],
+        "properties": {
+          "start": {
+            "type": "number",
+            "description": "Segment start time in seconds"
+          },
+          "end": {
+            "type": "number",
+            "description": "Segment end time in seconds"
+          },
+          "score": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1,
+            "description": "Similarity score from semantic search (optional)"
+          },
+          "priority": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 10,
+            "description": "Clip priority for selection (optional)"
+          },
+          "weight": {
+            "type": "number",
+            "description": "Scene weight for filtering (optional)"
+          },
+          "spoiler": {
+            "type": "object",
+            "description": "Spoiler risk assessment (optional)",
+            "properties": {
+              "risk": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 1,
+                "description": "Spoiler risk score (0=safe, 1=severe spoiler)"
+              },
+              "reason": {
+                "type": "string",
+                "enum": ["plot_twist", "ending", "character_death", "none"],
+                "description": "Reason for spoiler risk"
+              },
+              "confidence": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 1,
+                "description": "Confidence in spoiler detection"
+              }
+            }
+          },
+          "transitions": {
+            "type": "object",
+            "description": "Transition effects for this segment (optional)",
+            "properties": {
+              "before": {
+                "type": "string",
+                "enum": ["cut", "fade", "dissolve", "wipe"],
+                "description": "Transition before this segment"
+              },
+              "after": {
+                "type": "string",
+                "enum": ["cut", "fade", "dissolve", "wipe"],
+                "description": "Transition after this segment"
+              },
+              "duration": {
+                "type": "number",
+                "description": "Transition duration in seconds"
+              }
+            }
+          },
+          "overlays": {
+            "type": "array",
+            "description": "Segment-specific overlays (optional)",
+            "items": {
+              "type": "object",
+              "properties": {
+                "type": {
+                  "type": "string",
+                  "enum": ["logo", "text", "watermark"]
+                },
+                "start": {"type": "number"},
+                "end": {"type": "number"},
+                "position": {"type": "string"},
+                "file": {"type": "string"}
+              }
+            }
+          },
+          "cta_insert": {
+            "type": "object",
+            "description": "Call-to-action insertion point (optional)",
+            "properties": {
+              "enabled": {"type": "boolean"},
+              "text": {"type": "string"},
+              "link": {"type": "string"}
+            }
+          },
+          "narration_alignment": {
+            "type": "object",
+            "description": "Narration audio alignment settings (optional)",
+            "properties": {
+              "offset": {
+                "type": "number",
+                "description": "Audio offset in seconds"
+              },
+              "stretch": {
+                "type": "number",
+                "description": "Time stretch factor"
+              }
+            }
+          }
+        }
+      }
+    },
+    "global_overlays": {
+      "type": "array",
+      "description": "Global overlays applied to entire video (optional)",
+      "items": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": ["logo", "text", "watermark"]
+          },
+          "position": {
+            "type": "string",
+            "enum": ["top-left", "top-right", "bottom-left", "bottom-right", "center"]
+          },
+          "file": {"type": "string"},
+          "opacity": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1
+          },
+          "start_time": {"type": "number"},
+          "end_time": {"type": "number"}
+        }
+      }
+    },
+    "metadata": {
+      "type": "object",
+      "description": "Timeline metadata (optional)",
+      "properties": {
+        "project_id": {"type": "string"},
+        "movie_id": {"type": "string"},
+        "generated_at": {"type": "string", "format": "date-time"},
+        "version": {"type": "string"},
+        "options": {
+          "type": "object",
+          "properties": {
+            "spoiler_safe_mode": {"type": "boolean"},
+            "spoiler_risk_threshold": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1,
+              "description": "Maximum allowed spoiler risk (0-1)"
+            },
+            "max_duration": {"type": "number"},
+            "min_segment_length": {"type": "number"},
+            "similarity_threshold": {"type": "number"}
+          }
+        }
+      }
+    }
+  }
+}
+
