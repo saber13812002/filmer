@@ -1,0 +1,60 @@
+# General Rules - Development Standards
+
+## General Coding Standards
+
+### Code Quality
+- Write clean, readable, and maintainable code
+- Use meaningful variable and function names
+- Add comments for complex logic
+- Keep functions focused on single responsibilities
+- Avoid code duplication
+
+### Error Handling
+- Always handle potential errors gracefully
+- Provide informative error messages
+- Validate inputs before processing
+- Use try-except blocks where appropriate
+- Log errors for debugging
+
+### File Operations
+- Always use proper file encoding (UTF-8 for text files)
+- Check file existence before reading/writing
+- Use context managers (`with` statements) for file operations
+- Handle file path differences between operating systems
+
+### Configuration Files
+- Use JSON for structured configuration
+- Validate JSON structure before use
+- Provide default values where appropriate
+- Document configuration file formats
+
+### External Tools Integration
+- Verify external tool availability before use
+- Use absolute paths for external executables when needed
+- Handle subprocess errors appropriately
+- Provide clear feedback during long-running operations
+
+### Documentation
+- Document complex algorithms and processes
+- Explain non-obvious code decisions
+- Keep README files updated
+- Comment on FFmpeg filter complex operations
+
+### Performance
+- Optimize for reasonable processing times
+- Use appropriate FFmpeg presets for quality/speed balance
+- Consider memory usage for large video files
+- Provide progress indicators for long operations
+
+### Security
+- Validate all file paths
+- Avoid command injection vulnerabilities
+- Sanitize user inputs
+- Use safe subprocess execution methods
+
+### Version Control
+- Commit related changes together
+- Write clear commit messages
+- Don't commit large binary files (videos, audio)
+- Use .gitignore for output files and temporary data
+

@@ -1,0 +1,53 @@
+# Project Rules - Filmer Video Processing
+
+## Project Purpose
+This project processes video files by:
+1. Cutting specific segments from input videos based on timeline configuration
+2. Concatenating selected segments
+3. Combining the result with narration audio tracks
+4. Outputting final edited videos
+
+## Development Guidelines
+
+### Code Organization
+- Keep main processing logic in `cut_video.py`
+- Store configuration in JSON files
+- Separate input, narration, and output files in dedicated folders
+
+### Configuration Management
+- Use `timeline.json` for main project configuration
+- Each timeline entry defines:
+  - Input video path
+  - Narration audio path
+  - Output video path
+  - Array of time segments to extract
+
+### Video Processing Rules
+- Segments are defined by start and end times in seconds (float)
+- Segments are trimmed and concatenated in order
+- Video segments are processed without audio initially
+- Final audio comes from narration file
+- Use `-shortest` flag to match output duration to shortest input
+
+### File Naming Conventions
+- Input videos: Keep original names
+- Narration files: Use descriptive names (e.g., `imdb123123.m4a`)
+- Output files: Use descriptive names (e.g., `output_cut.mp4`, `output_cut2.mp4`)
+
+### Dependencies
+- Python 3.x
+- FFmpeg (configured path in code)
+- Standard library: `json`, `subprocess`
+
+### Testing
+- Test with small segments first
+- Verify output video quality
+- Check audio synchronization
+- Ensure all segments are included in final output
+
+### Maintenance
+- Update FFmpeg path if installation changes
+- Keep JSON files valid and well-formatted
+- Document any changes to filter complex operations
+- Backup important configuration files
+

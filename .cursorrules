@@ -1,0 +1,46 @@
+# Cursor Rules for Filmer Project
+
+## Project Overview
+This is a video editing and processing project that uses FFmpeg to cut video segments and combine them with narration audio.
+
+## Code Style
+- Use Python 3.x syntax
+- Follow PEP 8 style guidelines
+- Use descriptive variable names in English
+- Add comments for complex FFmpeg filter operations
+- Use UTF-8 encoding for JSON files
+
+## File Structure
+- `cut_video.py`: Main video processing script
+- `timeline.json`: Configuration file with input/output paths and segments
+- `films/input/`: Source video files
+- `films/narration/`: Audio narration files
+- `films/output/`: Processed output videos
+- `mix/`: Additional mixing configurations
+
+## FFmpeg Configuration
+- FFmpeg path is configured in `cut_video.py` as `FFMPEG` constant
+- Use `libx264` codec for video encoding
+- Use `aac` codec for audio encoding
+- Preset: `veryfast` for quick processing
+- CRF: `18` for high quality
+- Always use `-movflags +faststart` for web compatibility
+
+## JSON Configuration Format
+- Timeline JSON should have: `input`, `narration`, `output`, and `segments`
+- Segments array contains objects with `start` and `end` times in seconds
+- Use backslashes for Windows paths in JSON
+
+## Best Practices
+- Always validate JSON before processing
+- Check file existence before running FFmpeg
+- Use `-y` flag to overwrite existing output files
+- Handle subprocess errors gracefully
+- Print informative messages during processing
+
+## Error Handling
+- Validate JSON structure before processing
+- Check if input files exist
+- Handle FFmpeg subprocess errors
+- Provide clear error messages in Persian or English
+
