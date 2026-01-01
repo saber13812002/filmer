@@ -5,59 +5,19 @@
   "segments": [
     {
       "start": 0.5,
-      "end": 3.2,
-      "score": null,
-      "priority": null,
-      "weight": null,
-      "spoiler": null,
-      "transitions": null,
-      "overlays": null,
-      "cta_insert": null,
-      "narration_alignment": null
+      "end": 3.2
     },
     {
       "start": 15.0,
-      "end": 18.4,
-      "score": null,
-      "priority": null,
-      "weight": null,
-      "spoiler": null,
-      "transitions": null,
-      "overlays": null,
-      "cta_insert": null,
-      "narration_alignment": null
+      "end": 18.4
     },
     {
       "start": 110.0,
-      "end": 113.75,
-      "score": null,
-      "priority": null,
-      "weight": null,
-      "spoiler": null,
-      "transitions": null,
-      "overlays": null,
-      "cta_insert": null,
-      "narration_alignment": null
+      "end": 113.75
     },
     {
       "start": 120.0,
-      "end": 123.75,
-      "score": null,
-      "priority": null,
-      "weight": null,
-      "spoiler": null,
-      "transitions": null,
-      "overlays": null,
-      "cta_insert": null,
-      "narration_alignment": null
+      "end": 123.75
     }
-  ],
-  "global_overlays": null,
-  "metadata": {
-    "project_id": "test_project",
-    "movie_id": null,
-    "generated_at": "2026-01-01T18:28:45.296663",
-    "version": "1.0",
-    "options": null
-  }
+  ]
 }

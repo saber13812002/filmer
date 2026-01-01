@@ -94,19 +94,19 @@ class TimelineStageMVP(BaseStage):
             )
         )
         
-        # Save timeline JSON (save twice: in outputs/ and also return for save_output)
+        # Save timeline JSON (full version in outputs/)
         timeline_path = self.get_outputs_path(project_id) / "timeline.json"
-        save_timeline_json(timeline, timeline_path)
+        save_timeline_json(timeline, timeline_path, minimal=False)
         
-        # Also save a copy in project root for easy access by legacy cutter
+        # Also save a minimal copy in project root for easy access by legacy cutter
         root_timeline_path = self.get_project_path(project_id).parent.parent / "timeline.json"
         if self.project_root:
             root_timeline_path = self.project_root / "timeline.json"
         else:
             root_timeline_path = Path("timeline.json")
         
-        save_timeline_json(timeline, root_timeline_path)
-        print(f"[OK] Timeline also saved to root: {root_timeline_path}")
+        save_timeline_json(timeline, root_timeline_path, minimal=True)
+        print(f"[OK] Timeline also saved to root (minimal format): {root_timeline_path}")
         
         print(f"[OK] Timeline generated: {timeline_path}")
         print(f"  Segments: {len(segments)}")

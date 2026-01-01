@@ -1,5 +1,6 @@
 """Timeline JSON generation from matched segments"""
 
+import json
 from typing import List, Optional
 from datetime import datetime
 from pathlib import Path
