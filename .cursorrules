@@ -44,3 +44,49 @@ This is a video editing and processing project that uses FFmpeg to cut video seg
 - Handle FFmpeg subprocess errors
 - Provide clear error messages in Persian or English
 
+---
+
+## Semantic Timecode Engine Guidelines
+
+### Embedding Model
+- Use a **fixed embedding model** throughout the project
+- Do not change models between movie processing and narration processing
+- English → English for highest accuracy
+- For Persian content, use Bridge Translation approach
+
+### ChromaDB Best Practices
+- Always store time metadata (start_time, end_time) with embeddings
+- Use unique IDs for each chunk (e.g., "movie_000123")
+- Collection naming: `movie_subtitles_<movie_id>`
+- Never store embeddings without time metadata
+
+### Chunking Strategy
+- **Priority**: Time-based (10-20 seconds) over word count
+- Minimum chunk: 10 seconds or 100 words
+- Maximum chunk: 20 seconds or 200 words
+- Accumulate SRT entries until time/word limits are reached
+
+### Narration Search
+- Use **sliding window** approach (not single sentences)
+- Group 1-2 sentences together for better context
+- Example: Sentence 1+2, then Sentence 2+3
+- Query with n_results=3 for top matches
+
+### Segment Selection
+- Apply similarity threshold filtering
+- Remove severe overlaps between segments
+- Merge nearby segments when appropriate
+- Include similarity score in output JSON
+
+### JSON Output Format
+- Must match existing timeline.json structure
+- Include: input, narration, output, segments
+- Each segment: start, end, score (optional)
+- Direct compatibility with FFmpeg pipeline
+
+### Code Organization for Semantic Engine
+- Separate modules: SRT parser, chunker, embedder, ChromaDB manager
+- Keep offline processing (movie) separate from online (narration)
+- Use consistent error handling and logging
+- Test with small samples before full processing
+
