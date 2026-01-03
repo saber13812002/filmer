@@ -1,0 +1,27 @@
+version: '3.8'
+
+services:
+  filmer:
+    build: .
+    container_name: filmer
+    volumes:
+      # فایل‌های فیلم و زیرنویس
+      - ./films:/app/films
+      # خروجی‌ها و داده‌های پروژه
+      - ./projects:/app/projects
+      # JSON خروجی‌های legacy
+      - ./mix:/app/mix
+      # Timeline خروجی
+      - ./timeline.json:/app/timeline.json
+    working_dir: /app
+    stdin_open: true
+    tty: true
+    # برای دسترسی به GPU (اختیاری)
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices:
+    #         - driver: nvidia
+    #           count: 1
+    #           capabilities: [gpu]
+

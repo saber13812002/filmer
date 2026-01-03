@@ -1,3 +1,22 @@
-/films/input
-/films/output
-/films/narration/imdb123123.m4a
+# فایل‌های پرحجم فیلم
+/films/input/*.mp4
+/films/input/*.avi
+/films/input/*.mkv
+/films/output/*.mp4
+/films/output/*.avi
+/films/output/*.mkv
+
+# فایل‌های صوتی نقد (پرحجم)
+/films/narration/*.m4a
+/films/narration/*.mp3
+/films/narration/*.wav
+
+# داده‌های runtime پروژه
+/projects/
+
+# Timeline خروجی (می‌تواند در git باشد اگر کوچک است)
+# /timeline.json
+
+# فایل‌های SRT کوچک می‌توانند در git باشند
+# /films/input/*.srt
+# /films/narration/*.srt

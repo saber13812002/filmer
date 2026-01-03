@@ -1,0 +1,39 @@
+# فایل‌های پرحجم
+films/input/*.mp4
+films/narration/*.m4a
+films/output/*.mp4
+
+# داده‌های runtime
+projects/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Git
+.git/
+.gitignore
+
+# IDE
+.vscode/
+.idea/
+
+# Logs
+*.log
+
+# Test outputs
+test_*.py
+
+# Cache
+*.cache
+.pytest_cache/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Python
+*.egg-info/
+dist/
+build/
+
