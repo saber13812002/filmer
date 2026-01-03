@@ -31,14 +31,9 @@ class IndexStage(BaseStage):
         # Parse SRT file
         srt_entries = parse_srt_file(Path(movie_srt_path))
         
-        # Chunk entries
-        chunks = chunk_srt_entries(
-            srt_entries,
-            min_duration=10.0,
-            max_duration=20.0,
-            min_words=100,
-            max_words=200
-        )
+        # Use 3-sentence chunking strategy (prev + current + next)
+        from src.core.chunking import chunk_srt_entries_3_sentence
+        chunks = chunk_srt_entries_3_sentence(srt_entries)
         
         # Initialize adapters
         index_path = self.get_project_path(project_id) / "index" / "chroma"
@@ -58,11 +53,18 @@ class IndexStage(BaseStage):
         metadatas = []
         ids = []
         for i, chunk in enumerate(chunks):
+            # Calculate center time (middle entry time)
+            center_entry = chunk.entries[len(chunk.entries) // 2] if chunk.entries else None
+            center_time = center_entry.start_time if center_entry else chunk.start_time
+            
             metadatas.append({
                 "start_time": chunk.start_time,
                 "end_time": chunk.end_time,
+                "center_time": center_time,
                 "duration": chunk.duration,
-                "word_count": chunk.word_count
+                "word_count": chunk.word_count,
+                "sentence_index": i,  # Index of center sentence
+                "sentence_count": len(chunk.entries)  # Number of sentences in chunk (1-3)
             })
             ids.append(f"movie_{i:06d}")
         

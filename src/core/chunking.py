@@ -87,3 +87,44 @@ def chunk_srt_entries(
     
     return chunks
 
+
+def chunk_srt_entries_3_sentence(entries: List[SRTEntry]) -> List[Chunk]:
+    """Chunk SRT entries using 3-sentence window (prev + current + next)
+    
+    For each entry, creates a chunk containing:
+    - Previous entry (if exists)
+    - Current entry
+    - Next entry (if exists)
+    
+    This provides better context for semantic matching.
+    
+    Args:
+        entries: List of SRT entries to chunk
+        
+    Returns:
+        List of Chunk objects, each containing 3 sentences (or fewer at boundaries)
+    """
+    if not entries:
+        return []
+    
+    chunks = []
+    
+    for i, entry in enumerate(entries):
+        chunk_entries = []
+        
+        # Add previous entry if exists
+        if i > 0:
+            chunk_entries.append(entries[i - 1])
+        
+        # Add current entry
+        chunk_entries.append(entry)
+        
+        # Add next entry if exists
+        if i < len(entries) - 1:
+            chunk_entries.append(entries[i + 1])
+        
+        # Create chunk
+        chunks.append(Chunk(chunk_entries))
+    
+    return chunks
+

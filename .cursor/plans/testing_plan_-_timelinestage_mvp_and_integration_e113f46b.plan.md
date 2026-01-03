@@ -149,6 +149,3 @@ python scripts/run_stage.py timeline --project-id test_project
 ---
 
 ## Notes
-
-- Test 1 and 2 can be done immediately
-- Test 3 requires SRT files (can use mock data if needed)

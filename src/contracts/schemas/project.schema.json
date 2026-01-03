@@ -3,11 +3,32 @@
   "title": "Project Configuration Schema",
   "description": "Project workspace configuration schema",
   "type": "object",
-  "required": ["movie_id"],
+  "required": ["movie_id", "movie_duration", "movie_language"],
   "properties": {
     "movie_id": {
       "type": "string",
       "description": "IMDb ID or custom project identifier"
+    },
+    "movie_duration": {
+      "type": "number",
+      "minimum": 0,
+      "description": "Movie duration in seconds"
+    },
+    "movie_language": {
+      "type": "string",
+      "description": "Original language code (e.g., 'en', 'fa')"
+    },
+    "movie_video_path": {
+      "type": "string",
+      "description": "Path to movie video file (optional, nullable)"
+    },
+    "narration_srt_files": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "List of narration SRT file paths (multiple files supported)",
+      "default": []
     },
     "options": {
       "type": "object",

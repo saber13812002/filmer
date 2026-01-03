@@ -23,17 +23,18 @@ class SearchStage(BaseStage):
         # Load ingest and index outputs
         ingest_data = self.load_input(project_id)
         
-        narration_srt_path = ingest_data.get("narration_srt_path")
-        if not narration_srt_path:
-            raise StageExecutionError("Narration SRT path not found in ingest output")
+        # Get multiple narration SRT files
+        narration_srt_files = ingest_data.get("narration_srt_files", [])
+        if not narration_srt_files:
+            # Fallback to single file for backward compatibility
+            narration_srt_path = ingest_data.get("narration_srt_path")
+            if narration_srt_path:
+                narration_srt_files = [narration_srt_path]
         
-        # Parse narration SRT
-        narration_entries = parse_srt_file(Path(narration_srt_path))
+        if not narration_srt_files:
+            raise StageExecutionError("No narration SRT files found in ingest output")
         
-        # Group narration entries (sliding window: 1-2 sentences)
-        query_groups = self._create_sliding_window(narration_entries)
-        
-        # Initialize adapters
+        # Initialize adapters (reuse for all narration files)
         index_path = self.get_project_path(project_id) / "index" / "chroma"
         chroma_adapter = ChromaDBAdapter(persist_directory=index_path)
         
@@ -49,50 +50,60 @@ class SearchStage(BaseStage):
             index_data = json.load(f)
         collection_name = index_data["collection_name"]
         
-        # Search for each query group
+        # Process each narration file
         all_matches = []
-        for group_text, group_entries in query_groups:
-            # Embed query
-            query_embedding = embedding_adapter.embed_text(group_text)
-            
-            # Query ChromaDB
-            results = chroma_adapter.query(
-                collection_name=collection_name,
-                query_embeddings=[query_embedding],
-                n_results=3
-            )
-            
-            # Process results
-            if results.get("ids") and len(results["ids"][0]) > 0:
-                for i, (id_val, metadata, distance) in enumerate(zip(
-                    results["ids"][0],
-                    results["metadatas"][0],
-                    results["distances"][0]
-                )):
-                    similarity_score = 1.0 - distance  # Convert distance to similarity
-                    
-                    match = SearchMatch(
-                        segment_id=id_val,
-                        start_time=metadata["start_time"],
-                        end_time=metadata["end_time"],
-                        similarity_score=similarity_score,
-                        narration_text=group_text
-                    )
-                    all_matches.append(match)
         
-        output = SearchOutput(matches=[m.model_dump() for m in all_matches])
+        for narration_file_idx, narration_srt_path in enumerate(narration_srt_files):
+            # Parse narration SRT
+            narration_entries = parse_srt_file(Path(narration_srt_path))
+            
+            # Use 3-sentence window for each entry (prev + current + next)
+            from src.core.chunking import chunk_srt_entries_3_sentence
+            narration_chunks = chunk_srt_entries_3_sentence(narration_entries)
+            
+            # Search for each 3-sentence chunk
+            for chunk_idx, chunk in enumerate(narration_chunks):
+                # Get center entry for narration time
+                center_entry = chunk.entries[len(chunk.entries) // 2] if chunk.entries else None
+                narration_time = center_entry.start_time if center_entry else chunk.start_time
+                
+                # Embed query chunk
+                query_embedding = embedding_adapter.embed_text(chunk.text)
+                
+                # Query ChromaDB (get top 3 results for fallback options)
+                results = chroma_adapter.query(
+                    collection_name=collection_name,
+                    query_embeddings=[query_embedding],
+                    n_results=3
+                )
+                
+                # Process results
+                if results.get("ids") and len(results["ids"][0]) > 0:
+                    for i, (id_val, metadata, distance) in enumerate(zip(
+                        results["ids"][0],
+                        results["metadatas"][0],
+                        results["distances"][0]
+                    )):
+                        similarity_score = 1.0 - distance  # Convert distance to similarity
+                        
+                        match = SearchMatch(
+                            segment_id=id_val,
+                            start_time=metadata["start_time"],
+                            end_time=metadata["end_time"],
+                            similarity_score=similarity_score,
+                            narration_text=chunk.text
+                        )
+                        # Add narration file identifier
+                        match_dict = match.model_dump()
+                        match_dict["narration_file_id"] = f"narration_{narration_file_idx}"
+                        match_dict["narration_time"] = narration_time
+                        match_dict["chunk_index"] = chunk_idx
+                        match_dict["result_rank"] = i  # 0=best, 1=second, 2=third
+                        
+                        all_matches.append(match_dict)
+        
+        output = SearchOutput(matches=all_matches)
         return output.model_dump()
-    
-    def _create_sliding_window(self, entries: List[SRTEntry], window_size: int = 2) -> List[tuple[str, List[SRTEntry]]]:
-        """Create sliding window groups from narration entries"""
-        groups = []
-        
-        for i in range(len(entries) - window_size + 1):
-            window_entries = entries[i:i+window_size]
-            group_text = ' '.join(entry.text for entry in window_entries)
-            groups.append((group_text, window_entries))
-        
-        return groups
     
     def load_input(self, project_id: str) -> Dict[str, Any]:
         """Load ingest output"""

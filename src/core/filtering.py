@@ -1,6 +1,6 @@
 """Filtering logic for spoiler avoidance, scene weighting, etc."""
 
-from typing import List, Optional
+from typing import List, Optional, Dict
 from src.core.matching import Match
 from src.contracts.models.timeline import SpoilerRisk
 
@@ -102,4 +102,75 @@ def merge_nearby_segments(
             merged.append(match)
     
     return merged
+
+
+def prevent_consecutive_segments(
+    matches: List[Match],
+    min_time_gap: float = 30.0,
+    alternative_matches: Optional[Dict[str, List[Match]]] = None
+) -> List[Match]:
+    """Prevent consecutive segments from same time period (copyright compliance)
+    
+    Ensures segments are distributed across different parts of the movie
+    to comply with copyright requirements. If a segment is too close to the
+    previous one in movie time, it tries to use an alternative match.
+    
+    Args:
+        matches: List of matches sorted by narration time
+        min_time_gap: Minimum time gap between consecutive segments in movie time (seconds)
+        alternative_matches: Optional dict mapping segment_id to list of alternative matches
+        
+    Returns:
+        Filtered list with distributed segments (copyright compliant)
+    """
+    if not matches:
+        return []
+    
+    # Sort by narration time (assuming matches have narration_time attribute or we use start_time)
+    sorted_matches = sorted(matches, key=lambda m: getattr(m, 'narration_time', m.start_time))
+    
+    filtered = []
+    last_movie_time = None
+    
+    for match in sorted_matches:
+        # Calculate center time of current match in movie
+        current_movie_center = (match.start_time + match.end_time) / 2.0
+        
+        # Check if this match is too close to previous match in movie time
+        if last_movie_time is not None:
+            time_gap = abs(current_movie_center - last_movie_time)
+            
+            if time_gap < min_time_gap:
+                # Try to find alternative match with sufficient time gap
+                if alternative_matches and match.segment_id in alternative_matches:
+                    alternatives = alternative_matches[match.segment_id]
+                    found_alternative = False
+                    
+                    for alt_match in alternatives:
+                        alt_center = (alt_match.start_time + alt_match.end_time) / 2.0
+                        alt_gap = abs(alt_center - last_movie_time)
+                        
+                        if alt_gap >= min_time_gap:
+                            # Use alternative match
+                            filtered.append(alt_match)
+                            last_movie_time = alt_center
+                            found_alternative = True
+                            break
+                    
+                    if not found_alternative:
+                        # Skip this match if no suitable alternative
+                        continue
+                else:
+                    # Skip this match if no alternatives available
+                    continue
+            else:
+                # Time gap is sufficient, use this match
+                filtered.append(match)
+                last_movie_time = current_movie_center
+        else:
+            # First match, always include
+            filtered.append(match)
+            last_movie_time = current_movie_center
+    
+    return filtered
 

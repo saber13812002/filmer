@@ -1,6 +1,6 @@
 """Semantic matching algorithms"""
 
-from typing import List, Tuple
+from typing import List, Tuple, Optional
 from dataclasses import dataclass
 
 
@@ -8,10 +8,12 @@ from dataclasses import dataclass
 class Match:
     """Represents a match between narration and movie segment"""
     segment_id: str
-    start_time: float
-    end_time: float
+    start_time: float  # Movie segment start time
+    end_time: float    # Movie segment end time
     similarity_score: float
     narration_text: str
+    narration_time: Optional[float] = None  # Narration time (for sorting and copyright compliance)
+    narration_file_id: Optional[str] = None  # Identifier for which narration file this match belongs to
 
 
 def filter_by_similarity_threshold(

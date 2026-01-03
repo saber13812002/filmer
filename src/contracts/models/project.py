@@ -1,6 +1,6 @@
 """Pydantic models for Project configuration"""
 
-from typing import Optional, Literal
+from typing import Optional, Literal, List
 from pydantic import BaseModel, Field
 
 
@@ -38,6 +38,10 @@ class EmbeddingConfig(BaseModel):
 class ProjectConfig(BaseModel):
     """Project workspace configuration"""
     movie_id: str = Field(..., description="IMDb ID or custom project identifier")
+    movie_duration: float = Field(..., ge=0, description="Movie duration in seconds")
+    movie_language: str = Field(..., description="Original language code (e.g., 'en', 'fa')")
+    movie_video_path: Optional[str] = Field(None, description="Path to movie video file (optional)")
+    narration_srt_files: List[str] = Field(default_factory=list, description="List of narration SRT file paths")
     options: Optional[ProjectOptions] = None
     embedding: Optional[EmbeddingConfig] = None
 
@@ -45,6 +49,13 @@ class ProjectConfig(BaseModel):
         json_schema_extra = {
             "example": {
                 "movie_id": "tt0133093",
+                "movie_duration": 7200.0,
+                "movie_language": "en",
+                "movie_video_path": "films/input/movie.mp4",
+                "narration_srt_files": [
+                    "films/narration/critique1.srt",
+                    "films/narration/critique2.srt"
+                ],
                 "options": {
                     "spoiler_safe_mode": True,
                     "max_duration": 1200,

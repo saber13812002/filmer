@@ -33,34 +33,75 @@ class TimelineStage(BaseStage):
             with open(project_config_path, 'r', encoding='utf-8') as f:
                 project_config = json.load(f)
         
-        # Convert search matches to Match objects
-        from src.core.matching import Match
-        matches = [
-            Match(
-                segment_id=match.segment_id if hasattr(match, 'segment_id') else match["segment_id"],
-                start_time=match.start_time if hasattr(match, 'start_time') else match["start_time"],
-                end_time=match.end_time if hasattr(match, 'end_time') else match["end_time"],
-                similarity_score=match.similarity_score if hasattr(match, 'similarity_score') else match["similarity_score"],
-                narration_text=getattr(match, 'narration_text', None) or match.get("narration_text", "") if isinstance(match, dict) else (match.narration_text if hasattr(match, 'narration_text') else "")
-            )
-            for match in search_output.matches
-        ]
+        # Load narration SRT files to build intervals
+        from src.utils.srt_parser import parse_srt_file
+        narration_srt_files = ingest_data.get("narration_srt_files", [])
+        if not narration_srt_files:
+            narration_srt_path = ingest_data.get("narration_srt_path")
+            if narration_srt_path:
+                narration_srt_files = [narration_srt_path]
         
-        # Apply filtering
+        # Parse all narration entries
+        all_narration_entries = []
+        for narration_file in narration_srt_files:
+            entries = parse_srt_file(Path(narration_file))
+            all_narration_entries.extend(entries)
+        
+        # Sort narration entries by time
+        all_narration_entries.sort(key=lambda e: e.start_time)
+        
+        # Organize matches by narration entry index
+        from src.core.matching import Match
+        matches_by_narration = {}
+        
+        for match_data in search_output.matches:
+            if isinstance(match_data, dict):
+                chunk_index = match_data.get("chunk_index", 0)
+                narration_time = match_data.get("narration_time", 0.0)
+                
+                # Find narration entry index
+                entry_index = 0
+                for i, entry in enumerate(all_narration_entries):
+                    if entry.start_time <= narration_time <= entry.end_time:
+                        entry_index = i
+                        break
+                
+                match = Match(
+                    segment_id=match_data["segment_id"],
+                    start_time=match_data["start_time"],
+                    end_time=match_data["end_time"],
+                    similarity_score=match_data["similarity_score"],
+                    narration_text=match_data.get("narration_text", ""),
+                    narration_time=narration_time,
+                    narration_file_id=match_data.get("narration_file_id")
+                )
+                
+                if entry_index not in matches_by_narration:
+                    matches_by_narration[entry_index] = []
+                matches_by_narration[entry_index].append(match)
+        
+        # Sort matches by similarity score (best first)
+        for entry_index in matches_by_narration:
+            matches_by_narration[entry_index].sort(key=lambda m: m.similarity_score, reverse=True)
+        
+        # Apply similarity threshold
         similarity_threshold = 0.75
         if project_config and project_config.get("options"):
             similarity_threshold = project_config["options"].get("similarity_threshold", 0.75)
         
-        matches = filter_by_similarity_threshold(matches, similarity_threshold)
-        matches = remove_severe_overlaps(matches, overlap_threshold=0.7)
-        matches = merge_nearby_segments(matches, merge_threshold=5.0)
+        for entry_index in matches_by_narration:
+            matches_by_narration[entry_index] = [
+                m for m in matches_by_narration[entry_index]
+                if m.similarity_score >= similarity_threshold
+            ]
         
-        # Build timeline
+        # Build timeline using interval-based approach
         input_video = ingest_data.get("movie_video_path", "films/input/movie.mp4")
-        narration_audio = ingest_data.get("narration_audio_path", "films/narration/narration.m4a")
+        narration_audio = ingest_data.get("narration_audio_path") or ingest_data.get("narration_audio_files", [None])[0] or "films/narration/narration.m4a"
         output_video = str(self.get_outputs_path(project_id) / "final.mp4")
         
         timeline_options = None
+        min_time_gap = 30.0
         if project_config and project_config.get("options"):
             opts = project_config["options"]
             timeline_options = TimelineOptions(
@@ -70,12 +111,19 @@ class TimelineStage(BaseStage):
                 min_segment_length=opts.get("min_segment_length", 3.0),
                 similarity_threshold=opts.get("similarity_threshold", 0.75)
             )
+            # Copyright compliance time gap (can be configurable)
+            min_time_gap = opts.get("copyright_min_gap", 30.0)
         
-        timeline = build_timeline(
-            matches=matches,
+        from src.core.timeline_builder import build_timeline_for_narration_intervals
+        
+        timeline = build_timeline_for_narration_intervals(
+            narration_entries=all_narration_entries,
+            matches_by_narration=matches_by_narration,
             input_video_path=input_video,
             narration_audio_path=narration_audio,
             output_video_path=output_video,
+            interval_seconds=4.0,  # 3-5 second intervals
+            min_time_gap=min_time_gap,
             project_id=project_id,
             movie_id=project_config.get("movie_id") if project_config else None,
             options=timeline_options
