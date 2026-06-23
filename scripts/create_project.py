@@ -10,7 +10,7 @@ from typing import List
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from src.contracts.models.project import ProjectConfig, ProjectOptions, EmbeddingConfig
-from src.stages.base import BaseStage
+from src.stages.ingest import IngestStage
 
 
 def main():
@@ -49,7 +49,7 @@ def main():
             sys.exit(1)
     
     # Create project structure
-    stage = BaseStage(project_root=args.project_root)
+    stage = IngestStage(project_root=args.project_root)
     stage.ensure_project_structure(args.project_id)
     
     # Copy files to project data directory

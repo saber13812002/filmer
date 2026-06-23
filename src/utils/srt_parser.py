@@ -53,8 +53,12 @@ def parse_srt_file(file_path: Path) -> List[SRTEntry]:
     if not file_path.exists():
         raise FileNotFoundError(f"SRT file not found: {file_path}")
     
-    with open(file_path, 'r', encoding='utf-8') as f:
-        content = f.read()
+    raw = file_path.read_bytes()
+    if raw.startswith(b"\xff\xfe") or raw.startswith(b"\xfe\xff"):
+        content = raw.decode("utf-16")
+    else:
+        content = raw.decode("utf-8-sig")
+    content = content.replace("\r\n", "\n").replace("\r", "\n")
     
     # Split by double newlines to get individual entries
     blocks = content.strip().split('\n\n')
