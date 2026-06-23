@@ -20,3 +20,5 @@
 # فایل‌های SRT کوچک می‌توانند در git باشند
 # /films/input/*.srt
 # /films/narration/*.srt
+
+/.venv
