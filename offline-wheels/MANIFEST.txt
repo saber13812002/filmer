@@ -1,0 +1,6 @@
+generated_at=2026-06-23T21:23:38.6517871+03:30
+pip_version=pip 25.3 from C:\Users\s.tabatabaei\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\pip (python 3.14) 
+python_version=Python 3.14.0
+target_platform=manylinux2014_x86_64
+target_python=3.12
+wheel_count=0
